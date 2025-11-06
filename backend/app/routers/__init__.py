@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.routers import auth, vacancies
+from . import auth, vacancies
 
 router = APIRouter()
 router.include_router(auth.router)
