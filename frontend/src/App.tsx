@@ -7,7 +7,8 @@ function App() {
   const [minSalary, setMinSalary] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState<string | null>(null);
+  // const [token, setToken] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
 
@@ -21,6 +22,7 @@ function App() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
+          credentials: "include",
         });
 
         if (!res.ok) {
@@ -39,16 +41,21 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username: email, password }),
+        credentials: "include",
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        setIsAuthenticated(true);
+        fetchHHVacancies();
+      } else {
         alert("Ошибка входа — проверь логин или пароль");
         return;
       }
+      alert("Вы успешно вошли");
 
-      const data = await res.json();
-      setToken(data.access_token);
-      localStorage.setItem("token", data.access_token);
+      // const data = await res.json();
+      // setToken(data.access_token);
+      // localStorage.setItem("token", data.access_token);
     } catch (err) {
       console.error(err);
       alert("Ошибка подключения к серверу");
@@ -134,13 +141,32 @@ function App() {
     setMinSalary("");
   };
 
+  // useEffect(() => {
+  //   const savedToken = localStorage.getItem("token");
+  //   if (savedToken) {
+  //     setToken(savedToken);
+  //     // fetchVacancies();
+  //     fetchHHVacancies();
+  //   }
+  // }, []);
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    if (savedToken) {
-      setToken(savedToken);
-      // fetchVacancies();
-      fetchHHVacancies();
-    }
+    const checkAuth = async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/me`, {
+          credentials: "include", // важно, чтобы cookie отправились
+        });
+        setIsAuthenticated(res.ok);
+
+        if (res.ok) {
+          fetchHHVacancies();
+        }
+
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   return (
@@ -157,7 +183,7 @@ function App() {
     >
       <h1 style={{ marginBottom: "20px" }}>Joby</h1>
 
-      {!token ? (
+      {!isAuthenticated ? (
         <div
           style={{
             display: "flex",
@@ -278,9 +304,15 @@ function App() {
               Очистить фильтры
             </button>
             <button
-              onClick={() => {
-                setToken(null);
-                localStorage.removeItem("token");
+              onClick={async () => {
+                // setToken(null);
+                // localStorage.removeItem("token");
+                await fetch(`${API_URL}/auth/logout`, {
+                  method: "POST",
+                  credentials: "include",
+                });
+                setIsAuthenticated(false);
+                window.location.reload();
               }}
               style={{
                 padding: "10px 20px",
