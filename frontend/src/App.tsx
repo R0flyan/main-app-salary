@@ -316,27 +316,68 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <h1 style={{ marginBottom: "20px" }}>Joby</h1>
 
       {!isAuthenticated ? (
         <div
           style={{
+            width: "60vw",
+            height: "75vh",
+            backgroundColor: "#333333ff",
+            boxShadow: "0px 0px 13px 13px #000000",
+            border: "1px solid black",
+            borderColor: "#333333ff",
+            borderRadius: "10px",
             display: "flex",
             flexDirection: "column",
             gap: "10px",
             alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+            <h1 style={{ 
+              margin: "0 0 8px 0", 
+              fontSize: "78px", 
+              fontWeight: "700",
+              background: "linear-gradient(135deg, #ead410ff 0%, #dc5e0fff 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text"
+            }}>
+              Joby
+            </h1>
+            <p style={{ 
+              margin: "0", 
+              color: "#ffffffff",
+              fontSize: "16px",
+              fontStyle: "italic"
+            }}>
+              Найди работу мечты
+            </p>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              background: "#b3b3b3ff",
+              borderRadius: "12px",
+              padding: "4px",
+              marginBottom: "30px",
+            }}
+          >
             <button
               onClick={() => setMode("login")}
               style={{
-                padding: "8px 16px",
-                borderRadius: "6px",
+                flex: 1,
+                padding: "12px 16px",
+                borderRadius: "8px",
                 border: "none",
-                backgroundColor: mode === "login" ? "#076614ff" : "#6e6c6cff",
-                color: "white",
+                background: mode === "login" ? "white" : "transparent",
+                color: mode === "login" ? "#333" : "#666",
+                fontWeight: "600",
+                fontSize: "14px",
                 cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: mode === "login" ? "0 2px 8px rgba(0, 0, 0, 0.1)" : "none",
               }}
             >
               Вход
@@ -344,43 +385,101 @@ function App() {
             <button
               onClick={() => setMode("register")}
               style={{
-                padding: "8px 16px",
-                borderRadius: "6px",
+                flex: 1,
+                padding: "12px 16px",
+                borderRadius: "8px",
                 border: "none",
-                backgroundColor: mode === "register" ? "#076614ff" : "#6e6c6cff",
-                color: "white",
+                background: mode === "register" ? "white" : "transparent",
+                color: mode === "register" ? "#333" : "#666",
+                fontWeight: "600",
+                fontSize: "14px",
                 cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: mode === "register" ? "0 2px 8px rgba(0, 0, 0, 0.1)" : "none",
               }}
             >
               Регистрация
             </button>
           </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Пароль"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: "12px",
+                  border: "1px solid #e1e5e9",
+                  fontSize: "16px",
+                  outline: "none",
+                  transition: "all 0.3s ease",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#ef9f25ff";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e1e5e9";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+            </div>
+          <div>
+              <input
+                type="password"
+                placeholder="Пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: "12px",
+                  border: "1px solid #e1e5e9",
+                  fontSize: "16px",
+                  outline: "none",
+                  transition: "all 0.3s ease",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#ef9f25ff";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e1e5e9";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+            </div>
           <button
-            onClick={handleAuth}
-            style={{
-              padding: "10px 20px",
-              borderRadius: "6px",
-              border: "none",
-              backgroundColor: "#076614ff",
-              color: "white",
-              cursor: "pointer",
-            }}
-          >
-            {mode === "login" ? "Войти" : "Зарегистрироваться"}
-          </button>
+              onClick={handleAuth}
+              style={{
+                width: "20%",
+                padding: "16px",
+                borderRadius: "12px",
+                border: "none",
+                background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                marginTop: "8px",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 8px 15px rgba(208, 120, 58, 0.84)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 0 10px rgba(140, 119, 104, 0.94)";
+              }}
+            >
+              {mode === "login" ? "Войти в аккаунт" : "Создать аккаунт"}
+            </button>
         </div>
       ) : (
         <>
