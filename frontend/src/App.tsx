@@ -85,11 +85,29 @@ function App() {
   //   }
   // };
 
+  // interface Vacancy {
+  //   id: number;
+  //   title: string;
+  //   company: string;
+  //   salary: number;
+  //   url: string | undefined;
+  // }
+
+  // interface HHVacancy {
+  //   id: string;
+  //   name: string;
+  //   employer?: { name: string };
+  //   salary?: { from: number | null; to: number | null };
+  //   alternate_url: string;
+  // }
+
   interface Vacancy {
     id: number;
     title: string;
     company: string;
     salary: number;
+    salaryTo?: number | null;
+    currency?: string;
     url: string | undefined;
   }
 
@@ -97,48 +115,165 @@ function App() {
     id: string;
     name: string;
     employer?: { name: string };
-    salary?: { from: number | null; to: number | null };
+    salary?: {
+      from: number | null;
+      to: number | null;
+      currency?: string;   // <-- добавили
+    };
     alternate_url: string;
   }
 
-  const fetchHHVacancies = async () => {
-    setLoading(true);
-    try {
-      const query = encodeURIComponent(title);
-      const res = await fetch(`https://api.hh.ru/vacancies?text=${query}&per_page=10`);
-      if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
+  // const fetchHHVacancies = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const query = encodeURIComponent(title);
+  //     const res = await fetch(`https://api.hh.ru/vacancies?text=${query}&per_page=10`);
+  //     if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
 
-      const data = await res.json();
+  //     const data = await res.json();
 
-      let hhData: Vacancy[] = data.items.map((v: HHVacancy) => ({
-        id: Number(v.id),
-        title: v.name,
-        company: v.employer?.name || "Не указано",
-        salary: v.salary?.from ?? 0,
-        url: v.alternate_url,
-      }));
+  //     let hhData: Vacancy[] = data.items.map((v: HHVacancy) => ({
+  //       id: Number(v.id),
+  //       title: v.name,
+  //       company: v.employer?.name || "Не указано",
+  //       salary: v.salary?.from ?? 0,
+  //       url: v.alternate_url,
+  //     }));
 
-      if (company.trim()) {
-        hhData = hhData.filter((vac) =>
-          vac.company.toLowerCase().includes(company.toLowerCase())
-        );
-      }
+  //     if (company.trim()) {
+  //       hhData = hhData.filter((vac) =>
+  //         vac.company.toLowerCase().includes(company.toLowerCase())
+  //       );
+  //     }
 
-      if (minSalary.trim()) {
-        const min = Number(minSalary);
-        hhData = hhData.filter((vac) => vac.salary >= min);
-      }
+  //     if (minSalary.trim()) {
+  //       const min = Number(minSalary);
+  //       hhData = hhData.filter((vac) => vac.salary >= min);
+  //     }
 
-      setVacancies(hhData);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setVacancies(hhData);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  // const fetchHHVacancies = async () => {
+  //   setLoading(true);
+  //   try {
+  //     // Формируем параметры
+  //     const params = new URLSearchParams();
+  //     if (title.trim()) params.append("text", title);
+  //     if (company.trim()) params.append("employer_name", company);
+  //     if (minSalary.trim()) params.append("salary_from", minSalary);
+  //     params.append("per_page", "20");
+  //     params.append("only_with_salary", "true");
+  //     params.append("salary_currency", "RUR");
+
+  //     const res = await fetch(`https://api.hh.ru/vacancies?${params.toString()}`);
+  //     if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
+
+  //     const data = await res.json();
+
+  //     const hhData: Vacancy[] = data.items.filter((v: HHVacancy) => v.salary?.from && v.salary.currency === "RUR").map((v: HHVacancy) => ({
+  //       id: Number(v.id),
+  //       title: v.name,
+  //       company: v.employer?.name || "Отсутствует",
+  //       salary: v.salary?.from ?? 0,
+  //       url: v.alternate_url,
+  //     }));
+
+  //     setVacancies(hhData);
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Ошибка получения вакансий");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleClear = () => {
     setTitle("");
     setCompany("");
     setMinSalary("");
+  };
+
+  const fetchHHVacancies = async () => {
+    setLoading(true);
+    try {
+      // Формируем параметры для API hh.ru
+      const params = new URLSearchParams();
+      
+      // Собираем поисковый запрос из всех фильтров
+      let searchText = "";
+      if (title.trim()) searchText += title.trim();
+      if (company.trim()) {
+        if (searchText) searchText += " ";
+        searchText += company.trim();
+      }
+      
+      if (searchText) params.append("text", searchText);
+      params.append("per_page", "20"); // увеличим количество для лучшей фильтрации
+      
+      // Фильтры по зарплате
+      if (minSalary.trim()) {
+        params.append("salary", minSalary);
+      }
+      params.append("currency", "RUR"); // только рубли
+      params.append("only_with_salary", "true"); // только с указанной зарплатой
+
+      const res = await fetch(`https://api.hh.ru/vacancies?${params.toString()}`);
+      if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
+
+      const data = await res.json();
+
+      // Фильтруем вакансии на клиенте для точного соответствия
+      const hhData: Vacancy[] = data.items
+        .filter((v: HHVacancy) => {
+          // Проверяем что зарплата в рублях и не равна 0
+          if (!v.salary || v.salary.currency !== "RUR" || !v.salary.from || v.salary.from === 0) {
+            return false;
+          }
+
+          // Фильтр по минимальной зарплате (если указан)
+          if (minSalary.trim()) {
+            const minSalaryNum = Number(minSalary);
+            if (v.salary.from < minSalaryNum) return false;
+          }
+
+          // Фильтр по компании (точное соответствие)
+          if (company.trim()) {
+            const companyName = v.employer?.name?.toLowerCase() || "";
+            if (!companyName.includes(company.toLowerCase().trim())) {
+              return false;
+            }
+          }
+
+          // Фильтр по названию вакансии
+          if (title.trim()) {
+            const vacancyTitle = v.name.toLowerCase();
+            if (!vacancyTitle.includes(title.toLowerCase().trim())) {
+              return false;
+            }
+          }
+
+          return true;
+        })
+        .map((v: HHVacancy) => ({
+          id: Number(v.id),
+          title: v.name,
+          company: v.employer?.name || "Не указано",
+          salary: v.salary?.from ?? 0,
+          salaryTo: v.salary?.to || null,
+          currency: v.salary?.currency,
+          url: v.alternate_url,
+        }));
+
+      setVacancies(hhData);
+    } catch (err) {
+      console.error(err);
+      alert("Ошибка получения вакансий");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // useEffect(() => {
