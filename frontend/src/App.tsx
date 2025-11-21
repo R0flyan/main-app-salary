@@ -376,7 +376,7 @@ function App() {
                 fontWeight: "600",
                 fontSize: "14px",
                 cursor: "pointer",
-                transition: "all 0.3s ease",
+                transition: "all 0.55s ease",
                 boxShadow: mode === "login" ? "0 2px 8px rgba(0, 0, 0, 0.1)" : "none",
               }}
             >
@@ -394,8 +394,8 @@ function App() {
                 fontWeight: "600",
                 fontSize: "14px",
                 cursor: "pointer",
-                transition: "all 0.3s ease",
-                boxShadow: mode === "register" ? "0 2px 8px rgba(0, 0, 0, 0.1)" : "none",
+                transition: "all 0.55s ease",
+                boxShadow: mode === "register" ? "0 2px 8px rgba(255, 255, 255, 0.4)" : "none",
               }}
             >
               Регистрация
@@ -483,6 +483,23 @@ function App() {
         </div>
       ) : (
         <>
+          <div style={{
+            textAlign: "left",
+            marginBottom: "30px",
+            alignItems:"left"
+            }}>
+            <h1 style={{ 
+              margin: "0 0 8px 0", 
+              fontSize: "78px", 
+              fontWeight: "700",
+              background: "linear-gradient(135deg, #ead410ff 0%, #dc5e0fff 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text"
+            }}>
+              Joby
+            </h1>
+          </div>
           <h3>Параметры поиска:</h3>
 
           <div
