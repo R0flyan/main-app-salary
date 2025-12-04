@@ -13,3 +13,8 @@ class UserResponse(UserBase):
     id: int
     class Config:
         from_attributes = True
+        
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"

@@ -11,8 +11,59 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [authLoading, setAuthLoading] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+  // Функция для сохранения токена
+  const saveTokens = (accessToken: string, refreshToken: string) => {
+    localStorage.setItem("refresh_token", refreshToken);
+    localStorage.setItem("token_saved_at", Date.now().toString());
+  };
+
+  // Функция для получения refresh token
+  const getRefreshToken = () => {
+    return localStorage.getItem("refresh_token");
+  };
+
+  // Функция для очистки токенов
+  const clearTokens = () => {
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("token_saved_at");
+  };
+
+  // Функция для обновления access token
+  const refreshAccessToken = async (): Promise<boolean> => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${refreshToken}`
+        },
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Если бэкенд возвращает новый access token
+        if (data.access_token) {
+          saveTokens(data.access_token, data.refresh_token);
+        }
+        return true;
+      } else {
+        clearTokens();
+        return false;
+      }
+    } catch (error) {
+      console.error("Ошибка обновления токена:", error);
+      clearTokens();
+      return false;
+    }
+  };
 
   const handleAuth = async () => {
     try {
@@ -40,18 +91,24 @@ function App() {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username: email, password }),
+        body: new URLSearchParams({ username: email, password, grant_type: "password" }),
         credentials: "include",
       });
 
       if (res.ok) {
+        const data = await res.json();
+        
+        // Сохраняем refresh token
+        saveTokens(data.access_token, data.refresh_token);
+        
         setIsAuthenticated(true);
         fetchHHVacancies();
+        alert("Вы успешно вошли");
       } else {
-        alert("Ошибка входа — проверь логин или пароль");
+        const errorData = await res.json().catch(() => ({ detail: "Ошибка входа" }));
+        alert(`Ошибка входа: ${errorData.detail || "Проверь логин или пароль"}`);
         return;
       }
-      alert("Вы успешно вошли");
 
       // const data = await res.json();
       // setToken(data.access_token);
@@ -284,25 +341,82 @@ function App() {
   //     fetchHHVacancies();
   //   }
   // }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const timeoutId = setTimeout(() => {
+        fetchHHVacancies();
+      }, 800);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [title, company, minSalary, isAuthenticated, authLoading]);
+
   useEffect(() => {
     const checkAuth = async () => {
+      setAuthLoading(true);
+      // try {
+      //   const res = await fetch(`${API_URL}/auth/me`, {
+      //     credentials: "include", // важно, чтобы cookie отправились
+      //   });
+      //   setIsAuthenticated(res.ok);
+
+      //   if (res.ok) {
+      //     fetchHHVacancies();
+      //   }
+
+      // } catch {
+      //   setIsAuthenticated(false);
+      // }
       try {
+        // Сначала пробуем проверить текущую сессию через /auth/me
         const res = await fetch(`${API_URL}/auth/me`, {
-          credentials: "include", // важно, чтобы cookie отправились
+          credentials: "include",
         });
-        setIsAuthenticated(res.ok);
 
         if (res.ok) {
+          setIsAuthenticated(true);
           fetchHHVacancies();
+        } else if (res.status === 401) {
+          // Если access token истек, пробуем обновить его
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            setIsAuthenticated(true);
+            fetchHHVacancies();
+          } else {
+            setIsAuthenticated(false);
+            clearTokens();
+          }
+        } else {
+          setIsAuthenticated(false);
+          clearTokens();
         }
-
-      } catch {
+      } catch (error) {
+        console.error("Ошибка проверки авторизации:", error);
         setIsAuthenticated(false);
+        clearTokens();
+      } finally {
+        setAuthLoading(false);
       }
     };
 
     checkAuth();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Ошибка при выходе:", error);
+    } finally {
+      clearTokens();
+      setIsAuthenticated(false);
+      window.location.reload();
+    }
+  };
 
   return (
     <div
@@ -555,16 +669,17 @@ function App() {
               Очистить фильтры
             </button>
             <button
-              onClick={async () => {
-                // setToken(null);
-                // localStorage.removeItem("token");
-                await fetch(`${API_URL}/auth/logout`, {
-                  method: "POST",
-                  credentials: "include",
-                });
-                setIsAuthenticated(false);
-                window.location.reload();
-              }}
+              onClick={handleLogout}
+              // onClick={async () => {
+              //   // setToken(null);
+              //   // localStorage.removeItem("token");
+              //   await fetch(`${API_URL}/auth/logout`, {
+              //     method: "POST",
+              //     credentials: "include",
+              //   });
+              //   setIsAuthenticated(false);
+              //   window.location.reload();
+              // }}
               style={{
                 padding: "10px 20px",
                 borderRadius: "6px",
