@@ -12,58 +12,122 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [authLoading, setAuthLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  // const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  const API_URL = "http://localhost:8000"
 
-  // Функция для сохранения токена
-  const saveTokens = (accessToken: string, refreshToken: string) => {
-    localStorage.setItem("refresh_token", refreshToken);
-    localStorage.setItem("token_saved_at", Date.now().toString());
-  };
-
-  // Функция для получения refresh token
-  const getRefreshToken = () => {
-    return localStorage.getItem("refresh_token");
-  };
-
-  // Функция для очистки токенов
-  const clearTokens = () => {
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("token_saved_at");
-  };
 
   // Функция для обновления access token
   const refreshAccessToken = async (): Promise<boolean> => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return false;
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
 
-    try {
-      const res = await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${refreshToken}`
-        },
-        credentials: "include",
-      });
+    return res.ok;
+  } catch (error) {
+    console.error("Ошибка обновления токена:", error);
+    return false;
+  }
+};
 
-      if (res.ok) {
-        const data = await res.json();
-        // Если бэкенд возвращает новый access token
-        if (data.access_token) {
-          saveTokens(data.access_token, data.refresh_token);
-        }
-        return true;
+  const fetchUserProfile = async (): Promise<UserProfile | null> => {
+  try {
+    const res = await fetch(`${API_URL}/auth/me`, {
+      method: "GET",
+      credentials: "include", // ОЧЕНЬ ВАЖНО
+      mode: "cors", // Явно указываем режим CORS
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("Запрос к /auth/me, статус:", res.status);
+    
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    } else {
+      console.log("Ошибка авторизации, статус:", res.status);
+      return null;
+    }
+  } catch (error) {
+    console.error("Ошибка загрузки профиля:", error);
+    return null;
+  }
+};
+
+  // Обновление профиля
+  const updateProfile = async (profileData: Partial<UserProfile>) => {
+  try {
+    const preparedData: Record<string, string | number | null> = {};
+    
+    for (const [key, value] of Object.entries(profileData)) {
+      if (key === 'experience_years' || key === 'desired_salary') {
+        preparedData[key] = value === '' || value === null ? null : Number(value);
       } else {
-        clearTokens();
-        return false;
+        preparedData[key] = value === '' ? null : value;
       }
-    } catch (error) {
-      console.error("Ошибка обновления токена:", error);
-      clearTokens();
+    }
+
+    // Очистите пустые значения
+    Object.keys(preparedData).forEach(key => {
+      if (preparedData[key] === undefined || preparedData[key] === null) {
+        delete preparedData[key];
+      }
+    });
+
+    console.log("Отправляемые данные:", preparedData);
+
+    const res = await fetch(`${API_URL}/auth/profile`, {
+      method: "PUT",
+      headers: { 
+        "Content-Type": "application/json"
+      },
+      credentials: "include",  // Важно! Отправляет куки с access token
+      body: JSON.stringify(preparedData),
+    });
+
+    console.log("Статус ответа:", res.status);
+
+    if (res.ok) {
+      const data = await res.json();
+      setUserProfile(data);
+      alert("Профиль успешно обновлен!");
+      return true;
+    } else {
+      const errorText = await res.text();
+      console.error("Ошибка сервера:", errorText);
+      
+      try {
+        const error = JSON.parse(errorText);
+        alert(`Ошибка: ${error.detail || "Не удалось обновить профиль"}`);
+      } catch {
+        alert(`Ошибка ${res.status}: ${errorText}`);
+      }
+      
+      // Если 401, возможно токен истек
+      if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          // Повторяем запрос после обновления токена
+          return await updateProfile(profileData);
+        } else {
+          setIsAuthenticated(false);
+        }
+      }
+      
       return false;
     }
-  };
+  } catch (error) {
+    console.error("Ошибка обновления профиля:", error);
+    alert("Ошибка подключения к серверу");
+    return false;
+  }
+};
 
   const handleAuth = async () => {
     try {
@@ -96,12 +160,9 @@ function App() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        
-        // Сохраняем refresh token
-        saveTokens(data.access_token, data.refresh_token);
         
         setIsAuthenticated(true);
+        await fetchUserProfile();
         fetchHHVacancies();
         alert("Вы успешно вошли");
       } else {
@@ -110,53 +171,11 @@ function App() {
         return;
       }
 
-      // const data = await res.json();
-      // setToken(data.access_token);
-      // localStorage.setItem("token", data.access_token);
     } catch (err) {
       console.error(err);
       alert("Ошибка подключения к серверу");
     }
   };
-
-  // const fetchVacancies = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const params = new URLSearchParams();
-  //     if (title) params.append("title", title);
-  //     if (company) params.append("company", company);
-  //     if (minSalary) params.append("min_salary", minSalary);
-
-  //     const res = await fetch(`${API_URL}/vacancies?${params}`, {
-  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
-  //     });
-
-  //     if (!res.ok) throw new Error("Ошибка загрузки данных");
-  //     const data = await res.json();
-  //     setVacancies(data);
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Не удалось получить вакансии");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // interface Vacancy {
-  //   id: number;
-  //   title: string;
-  //   company: string;
-  //   salary: number;
-  //   url: string | undefined;
-  // }
-
-  // interface HHVacancy {
-  //   id: string;
-  //   name: string;
-  //   employer?: { name: string };
-  //   salary?: { from: number | null; to: number | null };
-  //   alternate_url: string;
-  // }
 
   interface Vacancy {
     id: number;
@@ -180,72 +199,22 @@ function App() {
     alternate_url: string;
   }
 
-  // const fetchHHVacancies = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const query = encodeURIComponent(title);
-  //     const res = await fetch(`https://api.hh.ru/vacancies?text=${query}&per_page=10`);
-  //     if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
+  interface UserProfile {
+    id: number;
+    email: string;
+    full_name?: string;
+    phone?: string;
+    city?: string;
+    position?: string;
+    experience_years?: number | null;
+    skills?: string; // JSON строка
+    desired_salary?: number | null;
+    work_format?: string;
+    employment_type?: string;
+    about?: string;
+    created_at: string;
+  }
 
-  //     const data = await res.json();
-
-  //     let hhData: Vacancy[] = data.items.map((v: HHVacancy) => ({
-  //       id: Number(v.id),
-  //       title: v.name,
-  //       company: v.employer?.name || "Не указано",
-  //       salary: v.salary?.from ?? 0,
-  //       url: v.alternate_url,
-  //     }));
-
-  //     if (company.trim()) {
-  //       hhData = hhData.filter((vac) =>
-  //         vac.company.toLowerCase().includes(company.toLowerCase())
-  //       );
-  //     }
-
-  //     if (minSalary.trim()) {
-  //       const min = Number(minSalary);
-  //       hhData = hhData.filter((vac) => vac.salary >= min);
-  //     }
-
-  //     setVacancies(hhData);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  // const fetchHHVacancies = async () => {
-  //   setLoading(true);
-  //   try {
-  //     // Формируем параметры
-  //     const params = new URLSearchParams();
-  //     if (title.trim()) params.append("text", title);
-  //     if (company.trim()) params.append("employer_name", company);
-  //     if (minSalary.trim()) params.append("salary_from", minSalary);
-  //     params.append("per_page", "20");
-  //     params.append("only_with_salary", "true");
-  //     params.append("salary_currency", "RUR");
-
-  //     const res = await fetch(`https://api.hh.ru/vacancies?${params.toString()}`);
-  //     if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
-
-  //     const data = await res.json();
-
-  //     const hhData: Vacancy[] = data.items.filter((v: HHVacancy) => v.salary?.from && v.salary.currency === "RUR").map((v: HHVacancy) => ({
-  //       id: Number(v.id),
-  //       title: v.name,
-  //       company: v.employer?.name || "Отсутствует",
-  //       salary: v.salary?.from ?? 0,
-  //       url: v.alternate_url,
-  //     }));
-
-  //     setVacancies(hhData);
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Ошибка получения вакансий");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleClear = () => {
     setTitle("");
@@ -253,50 +222,63 @@ function App() {
     setMinSalary("");
   };
 
-  const fetchHHVacancies = async () => {
+
+  const fetchHHVacancies = async (useProfile = false) => {
     setLoading(true);
     try {
-      // Формируем параметры для API hh.ru
       const params = new URLSearchParams();
       
-      // Собираем поисковый запрос из всех фильтров
-      let searchText = "";
-      if (title.trim()) searchText += title.trim();
-      if (company.trim()) {
-        if (searchText) searchText += " ";
-        searchText += company.trim();
+      // Используем данные профиля для поиска, если включена опция
+      let searchTitle = title;
+      let searchMinSalary = minSalary;
+      
+      if (useProfile && userProfile) {
+        if (!searchTitle && userProfile.position) {
+          searchTitle = userProfile.position;
+        }
+        if (!searchMinSalary && userProfile.desired_salary) {
+          searchMinSalary = userProfile.desired_salary.toString();
+        }
       }
       
-      if (searchText) params.append("text", searchText);
-      params.append("per_page", "20"); // увеличим количество для лучшей фильтрации
-      
-      // Фильтры по зарплате
-      if (minSalary.trim()) {
-        params.append("salary", minSalary);
+      if (!searchTitle.trim() && !company.trim() && !searchMinSalary.trim()) {
+        params.append("text", "разработчик");
+      } else {
+        let searchText = "";
+        if (searchTitle.trim()) searchText += searchTitle.trim();
+        if (company.trim()) {
+          if (searchText) searchText += " ";
+          searchText += company.trim();
+        }
+        
+        if (searchText) params.append("text", searchText);
       }
-      params.append("currency", "RUR"); // только рубли
-      params.append("only_with_salary", "true"); // только с указанной зарплатой
+      
+      params.append("per_page", "20");
+      
+      if (searchMinSalary.trim()) {
+        params.append("salary", searchMinSalary);
+      }
+      params.append("currency", "RUR");
+      params.append("only_with_salary", "true");
 
       const res = await fetch(`https://api.hh.ru/vacancies?${params.toString()}`);
       if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
 
       const data = await res.json();
 
-      // Фильтруем вакансии на клиенте для точного соответствия
+      // Дополнительная фильтрация по профилю
       const hhData: Vacancy[] = data.items
         .filter((v: HHVacancy) => {
-          // Проверяем что зарплата в рублях и не равна 0
           if (!v.salary || v.salary.currency !== "RUR" || !v.salary.from || v.salary.from === 0) {
             return false;
           }
 
-          // Фильтр по минимальной зарплате (если указан)
-          if (minSalary.trim()) {
-            const minSalaryNum = Number(minSalary);
-            if (v.salary.from < minSalaryNum) return false;
-          }
+          // Фильтр по минимальной зарплате
+          const minSalaryNum = searchMinSalary.trim() ? Number(searchMinSalary) : 0;
+          if (minSalaryNum > 0 && v.salary.from < minSalaryNum) return false;
 
-          // Фильтр по компании (точное соответствие)
+          // Фильтр по компании
           if (company.trim()) {
             const companyName = v.employer?.name?.toLowerCase() || "";
             if (!companyName.includes(company.toLowerCase().trim())) {
@@ -304,12 +286,19 @@ function App() {
             }
           }
 
-          // Фильтр по названию вакансии
-          if (title.trim()) {
+          // Фильтр по названию
+          if (searchTitle.trim()) {
             const vacancyTitle = v.name.toLowerCase();
-            if (!vacancyTitle.includes(title.toLowerCase().trim())) {
+            if (!vacancyTitle.includes(searchTitle.toLowerCase().trim())) {
               return false;
             }
+          }
+
+          // Дополнительная фильтрация по данным профиля
+          if (useProfile && userProfile) {
+            // Можно добавить фильтры по формату работы, типу занятости и т.д.
+            // Например, если в профиле указан город, искать вакансии в этом городе
+            // или фильтровать по нужным навыкам
           }
 
           return true;
@@ -333,15 +322,6 @@ function App() {
     }
   };
 
-  // useEffect(() => {
-  //   const savedToken = localStorage.getItem("token");
-  //   if (savedToken) {
-  //     setToken(savedToken);
-  //     // fetchVacancies();
-  //     fetchHHVacancies();
-  //   }
-  // }, []);
-
   useEffect(() => {
     if (isAuthenticated) {
       const timeoutId = setTimeout(() => {
@@ -353,55 +333,43 @@ function App() {
   }, [title, company, minSalary, isAuthenticated, authLoading]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      setAuthLoading(true);
-      // try {
-      //   const res = await fetch(`${API_URL}/auth/me`, {
-      //     credentials: "include", // важно, чтобы cookie отправились
-      //   });
-      //   setIsAuthenticated(res.ok);
+  const checkAuth = async () => {
+    setAuthLoading(true);
+    try {
+      // Сначала пробуем проверить текущую сессию через /auth/me
+      const res = await fetch(`${API_URL}/auth/me`, {
+        credentials: "include",
+      });
 
-      //   if (res.ok) {
-      //     fetchHHVacancies();
-      //   }
-
-      // } catch {
-      //   setIsAuthenticated(false);
-      // }
-      try {
-        // Сначала пробуем проверить текущую сессию через /auth/me
-        const res = await fetch(`${API_URL}/auth/me`, {
-          credentials: "include",
-        });
-
-        if (res.ok) {
+      if (res.ok) {
+        const userData = await res.json(); // Добавьте эту строку
+        setUserProfile(userData);
+        setIsAuthenticated(true);
+        fetchHHVacancies();
+      } else if (res.status === 401) {
+        // Если access token истек, пробуем обновить его
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          const profileData = await fetchUserProfile();
+          setUserProfile(profileData);
           setIsAuthenticated(true);
           fetchHHVacancies();
-        } else if (res.status === 401) {
-          // Если access token истек, пробуем обновить его
-          const refreshed = await refreshAccessToken();
-          if (refreshed) {
-            setIsAuthenticated(true);
-            fetchHHVacancies();
-          } else {
-            setIsAuthenticated(false);
-            clearTokens();
-          }
         } else {
           setIsAuthenticated(false);
-          clearTokens();
         }
-      } catch (error) {
-        console.error("Ошибка проверки авторизации:", error);
+      } else {
         setIsAuthenticated(false);
-        clearTokens();
-      } finally {
-        setAuthLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Ошибка проверки авторизации:", error);
+      setIsAuthenticated(false);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
-    checkAuth();
-  }, []);
+  checkAuth();
+}, []);
 
   const handleLogout = async () => {
     try {
@@ -412,10 +380,338 @@ function App() {
     } catch (error) {
       console.error("Ошибка при выходе:", error);
     } finally {
-      clearTokens();
       setIsAuthenticated(false);
+      setUserProfile(null);
       window.location.reload();
     }
+  };
+
+  const ProfileForm = () => {
+    const [formData, setFormData] = useState({
+      full_name: userProfile?.full_name || "",
+      phone: userProfile?.phone || "",
+      city: userProfile?.city || "",
+      position: userProfile?.position || "",
+      experience_years: userProfile?.experience_years?.toString() || "",
+      skills: userProfile?.skills || "",
+      desired_salary: userProfile?.desired_salary?.toString() || "",
+      work_format: userProfile?.work_format || "office",
+      employment_type: userProfile?.employment_type || "full",
+      about: userProfile?.about || "",
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const dataToSend: Partial<UserProfile> = {};
+  
+  // Добавляем только заполненные поля
+  if (formData.full_name) dataToSend.full_name = formData.full_name;
+  if (formData.phone) dataToSend.phone = formData.phone;
+  if (formData.city) dataToSend.city = formData.city;
+  if (formData.position) dataToSend.position = formData.position;
+  if (formData.experience_years) {
+    dataToSend.experience_years = parseInt(formData.experience_years) || null;
+  }
+  if (formData.skills) dataToSend.skills = formData.skills;
+  if (formData.desired_salary) {
+    dataToSend.desired_salary = parseInt(formData.desired_salary) || null;
+  }
+  if (formData.work_format) dataToSend.work_format = formData.work_format;
+  if (formData.employment_type) dataToSend.employment_type = formData.employment_type;
+  if (formData.about) dataToSend.about = formData.about;
+  
+  await updateProfile(dataToSend);
+  setShowProfile(false);
+};
+
+    return (
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}>
+        <div style={{
+          background: "#333333ff",
+          padding: "30px",
+          borderRadius: "15px",
+          width: "90%",
+          maxWidth: "600px",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          boxShadow: "0px 0px 20px rgba(234, 212, 16, 0.5)",
+          border: "2px solid #ead410ff",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h2 style={{ color: "#ead410ff", margin: 0 }}>Личный кабинет</h2>
+            <button
+              onClick={() => setShowProfile(false)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#fff",
+                fontSize: "24px",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: "grid", gap: "15px" }}>
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  ФИО *
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Телефон
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Город
+                </label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Должность *
+                </label>
+                <input
+                  type="text"
+                  value={formData.position}
+                  onChange={(e) => setFormData({...formData, position: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                  placeholder="Например: Python разработчик"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Опыт работы (лет)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={formData.experience_years}
+                  onChange={(e) => setFormData({...formData, experience_years: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Желаемая зарплата (руб)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.desired_salary}
+                  onChange={(e) => setFormData({...formData, desired_salary: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                  placeholder="Например: 150000"
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Формат работы
+                </label>
+                <select
+                  value={formData.work_format}
+                  onChange={(e) => setFormData({...formData, work_format: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                >
+                  <option value="office">Офис</option>
+                  <option value="remote">Удалённо</option>
+                  <option value="hybrid">Гибрид</option>
+                  <option value="any">Не важно</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Тип занятости
+                </label>
+                <select
+                  value={formData.employment_type}
+                  onChange={(e) => setFormData({...formData, employment_type: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                  }}
+                >
+                  <option value="full">Полная занятость</option>
+                  <option value="part">Частичная занятость</option>
+                  <option value="project">Проектная работа</option>
+                  <option value="internship">Стажировка</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  Навыки (через запятую)
+                </label>
+                <textarea
+                  value={formData.skills}
+                  onChange={(e) => setFormData({...formData, skills: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                    minHeight: "80px",
+                  }}
+                  placeholder="Python, JavaScript, React, SQL, Docker"
+                />
+              </div>
+
+              <div>
+                <label style={{ color: "#fff", display: "block", marginBottom: "5px" }}>
+                  О себе
+                </label>
+                <textarea
+                  value={formData.about}
+                  onChange={(e) => setFormData({...formData, about: e.target.value})}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #666",
+                    background: "#222",
+                    color: "#fff",
+                    minHeight: "100px",
+                  }}
+                  placeholder="Расскажите о своих профессиональных целях и опыте..."
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button
+                type="submit"
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
+                  color: "white",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Сохранить
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProfile(false)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "6px",
+                  border: "1px solid #666",
+                  background: "transparent",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Отмена
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -598,59 +894,159 @@ function App() {
       ) : (
         <>
           <div style={{
-            textAlign: "left",
+            width: "100%",
+            maxWidth: "1200px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             marginBottom: "30px",
-            alignItems:"left"
-            }}>
-            <h1 style={{ 
-              margin: "0 0 8px 0", 
-              fontSize: "78px", 
-              fontWeight: "700",
-              background: "linear-gradient(135deg, #ead410ff 0%, #dc5e0fff 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text"
-            }}>
-              Joby
-            </h1>
+            flexWrap: "wrap",
+            gap: "20px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+              <h1 style={{ 
+                margin: 0, 
+                fontSize: "48px", 
+                fontWeight: "700",
+                background: "linear-gradient(135deg, #ead410ff 0%, #dc5e0fff 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text"
+              }}>
+                Joby
+              </h1>
+              
+              {userProfile && (
+                <div style={{
+                  padding: "10px 20px",
+                  background: "rgba(234, 212, 16, 0.1)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(234, 212, 16, 0.3)",
+                  color: "#fff",
+                }}>
+                  <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                    {userProfile.full_name || userProfile.email}
+                  </div>
+                  {userProfile.position && (
+                    <div style={{ fontSize: "14px", color: "#aaa" }}>
+                      {userProfile.position}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={() => setShowProfile(true)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Личный кабинет
+              </button>
+              
+              <button
+                onClick={() => fetchHHVacancies(true)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #708964ff 0%, #5a7249ff 100%)",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+                title="Искать по данным профиля"
+              >
+                Искать по моему профилю
+              </button>
+              
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "6px",
+                  border: "none",
+                  backgroundColor: "#444",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Выйти
+              </button>
+            </div>
           </div>
-          <h3>Параметры поиска:</h3>
+
+          <h3 style={{ color: "white", marginBottom: "20px" }}>Параметры поиска:</h3>
 
           <div
             style={{
               display: "grid",
               gap: "10px",
               justifyContent: "center",
-              marginBottom: "20px",
+              marginBottom: "30px",
+              width: "100%",
+              maxWidth: "800px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             }}
           >
             <input
               type="text"
-              placeholder="Название"
+              placeholder="Название вакансии"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              style={{
+                padding: "12px",
+                borderRadius: "6px",
+                border: "1px solid #666",
+                background: "#222",
+                color: "white",
+              }}
             />
             <input
               type="text"
               placeholder="Компания"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
+              style={{
+                padding: "12px",
+                borderRadius: "6px",
+                border: "1px solid #666",
+                background: "#222",
+                color: "white",
+              }}
             />
             <input
-              type="text"
+              type="number"
               placeholder="Мин. зарплата"
               value={minSalary}
               onChange={(e) => setMinSalary(e.target.value)}
+              style={{
+                padding: "12px",
+                borderRadius: "6px",
+                border: "1px solid #666",
+                background: "#222",
+                color: "white",
+              }}
             />
             <button
-              onClick={fetchHHVacancies}
+              onClick={() => fetchHHVacancies(false)}
               style={{
-                padding: "10px 20px",
+                padding: "12px 20px",
                 borderRadius: "6px",
                 border: "none",
                 backgroundColor: "#708964ff",
                 color: "white",
                 cursor: "pointer",
+                fontWeight: "600",
               }}
             >
               Поиск
@@ -658,57 +1054,94 @@ function App() {
             <button
               onClick={handleClear}
               style={{
-                padding: "10px 20px",
+                padding: "12px 20px",
                 borderRadius: "6px",
                 border: "none",
                 backgroundColor: "#860e0eff",
                 color: "white",
                 cursor: "pointer",
+                fontWeight: "600",
               }}
             >
               Очистить фильтры
             </button>
-            <button
-              onClick={handleLogout}
-              // onClick={async () => {
-              //   // setToken(null);
-              //   // localStorage.removeItem("token");
-              //   await fetch(`${API_URL}/auth/logout`, {
-              //     method: "POST",
-              //     credentials: "include",
-              //   });
-              //   setIsAuthenticated(false);
-              //   window.location.reload();
-              // }}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "6px",
-                border: "none",
-                backgroundColor: "#444",
-                color: "white",
-                cursor: "pointer",
-              }}
-            >
-              Выйти
-            </button>
           </div>
 
-          {loading && <p>Загрузка...</p>}
-          <ul>
-            {vacancies.length === 0 && !loading && <p>Нет данных</p>}
-            {vacancies.map((v) => (
-              <li key={v.id}>
-                {v.title}, {v.company}, {v.salary.toLocaleString()} ₽
-                {v.url && (
-                  <a href={v.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: "10px", color: "blue" }}>
-                    Ссылка
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
+          {loading && <p style={{ color: "white", textAlign: "center" }}>Загрузка вакансий...</p>}
+          
+          <div style={{ width: "100%", maxWidth: "1200px" }}>
+            {vacancies.length === 0 && !loading && (
+              <p style={{ color: "white", textAlign: "center" }}>
+                Нет подходящих вакансий. Попробуйте изменить параметры поиска.
+              </p>
+            )}
+            
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+              gap: "20px" 
+            }}>
+              {vacancies.map((v) => (
+                <div 
+                  key={v.id}
+                  style={{ 
+                    background: "#333",
+                    padding: "20px",
+                    borderRadius: "10px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                    border: "1px solid #444",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    cursor: "pointer",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "translateY(-5px)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(234, 212, 16, 0.2)";
+                    e.currentTarget.style.borderColor = "#ead410ff";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
+                    e.currentTarget.style.borderColor = "#444";
+                  }}
+                  onClick={() => window.open(v.url, '_blank')}
+                >
+                  <h3 style={{ margin: "0 0 10px 0", color: "#fff" }}>
+                    {v.title}
+                  </h3>
+                  <p style={{ margin: "0 0 10px 0", color: "#aaa" }}>
+                    {v.company}
+                  </p>
+                  <p style={{ margin: "0 0 15px 0", color: "#4CAF50", fontWeight: "bold" }}>
+                    {v.salary.toLocaleString()} ₽
+                    {v.salaryTo && ` - ${v.salaryTo.toLocaleString()} ₽`}
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(v.url, '_blank');
+                    }}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "6px",
+                      border: "none",
+                      background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
+                      color: "white",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Открыть на hh.ru
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
+
+      {/* Модальное окно профиля */}
+      {showProfile && <ProfileForm />}
     </div>
   );
 }

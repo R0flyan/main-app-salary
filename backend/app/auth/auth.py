@@ -38,18 +38,28 @@ def get_current_user(
     db: Session = Depends(get_db)
 ):
     token = request.cookies.get("access_token")
+    print(f"[DEBUG] Получен токен из куки: {'Да' if token else 'Нет'}")
+    print(f"[DEBUG] Все куки: {request.cookies}")
+    
     if not token:
+        print("[DEBUG] Токен не найден в куках")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
+        print(f"[DEBUG] Декодированный email: {email}")
+        
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    except JWTError:
+    except JWTError as e:
+        print(f"[DEBUG] Ошибка декодирования токена: {str(e)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user = db.query(models.User).filter(models.User.email == email).first()
     if user is None:
+        print(f"[DEBUG] Пользователь с email {email} не найден")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
+    print(f"[DEBUG] Пользователь найден: {user.email}")
     return user

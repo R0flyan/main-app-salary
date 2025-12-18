@@ -15,6 +15,26 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 async def read_current_user(current_user: models.User = Depends(get_current_user)):
     return current_user
 
+@router.put("/profile", response_model=schemas.UserResponse)
+async def update_profile(
+    profile_data: schemas.ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)):
+    update_data = profile_data.dict(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        if hasattr(current_user, field):
+            setattr(current_user, field, value)
+    
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.get("/profile", response_model=schemas.ProfileResponse)
+async def get_profile(current_user: models.User = Depends(get_current_user)):
+    # Возвращаем только профиль
+    return current_user
+
 @router.post("/register", response_model=schemas.UserResponse)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db.query(models.User).filter(models.User.email == user.email).first():
@@ -65,9 +85,21 @@ def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,           # поставить True в проде (при https)
-        samesite="lax",
+        secure=False,  # False для localhost
+        samesite="lax",  # или "none" если используете разные домены
         max_age=60 * settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        path="/",  # Важно: доступна для всех путей
+    )
+    
+    # Также для refresh token (если хотите хранить в куках)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=60 * 60 * 24 * settings.REFRESH_TOKEN_EXPIRE_DAYS,
+        path="/",
     )
 
     # return {"message": "Logged in successfully"}
@@ -78,13 +110,16 @@ def login(
     }
     
 @router.post("/refresh", response_model=TokenResponse)
-def refresh_token(request: Request, db: Session = Depends(get_db)):
-    # Получаем refresh token из заголовка Authorization
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+def refresh_token(
+    response: Response,  # Добавьте response
+    request: Request, 
+    db: Session = Depends(get_db)
+):
+
+    refresh_token = request.cookies.get("refresh_token")
     
-    refresh_token = auth_header.split(" ")[1]
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
     
     try:
         from jose import jwt
@@ -94,7 +129,6 @@ def refresh_token(request: Request, db: Session = Depends(get_db)):
             raise HTTPException(status_code=401, detail="Invalid refresh token")
             
         # Проверяем, что это именно refresh token (по типу или отдельному полю)
-        # Можно добавить поле "type": "refresh" в payload
         token_type = payload.get("type")
         if token_type != "refresh":
             raise HTTPException(status_code=401, detail="Invalid token type")
@@ -118,6 +152,26 @@ def refresh_token(request: Request, db: Session = Depends(get_db)):
     new_refresh_token = create_refresh_token(
         data={"sub": user.email},
         expires_delta=refresh_token_expires
+    )
+    
+    response.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=60 * settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        path="/",
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=60 * 60 * 24 * settings.REFRESH_TOKEN_EXPIRE_DAYS,
+        path="/",
     )
     
     return {
