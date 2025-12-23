@@ -11,23 +11,41 @@ from app.schemas.user import UserResponse, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.get("/me", response_model=UserResponse)
-async def read_current_user(current_user: models.User = Depends(get_current_user)):
+# @router.get("/me", response_model=UserResponse)
+# async def read_current_user(current_user: models.User = Depends(get_current_user)):
+#     return current_user
+
+@router.get("/me", response_model=schemas.UserProfileResponse)
+def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
-@router.put("/profile", response_model=schemas.UserResponse)
-async def update_profile(
-    profile_data: schemas.ProfileUpdate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)):
-    update_data = profile_data.dict(exclude_unset=True)
+# @router.put("/profile", response_model=schemas.UserResponse)
+# async def update_profile(
+#     profile_data: schemas.ProfileUpdate,
+#     db: Session = Depends(get_db),
+#     current_user: models.User = Depends(get_current_user)):
+#     update_data = profile_data.dict(exclude_unset=True)
     
-    for field, value in update_data.items():
-        if hasattr(current_user, field):
-            setattr(current_user, field, value)
+#     for field, value in update_data.items():
+#         if hasattr(current_user, field):
+#             setattr(current_user, field, value)
     
+#     db.commit()
+#     db.refresh(current_user)
+#     return current_user
+
+@router.put("/profile", response_model=schemas.UserProfileResponse)
+def update_profile(
+    profile: schemas.ProfileUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    for key, value in profile.dict(exclude_unset=True).items():
+        setattr(current_user, key, value)
+
     db.commit()
     db.refresh(current_user)
+
     return current_user
 
 @router.get("/profile", response_model=schemas.ProfileResponse)

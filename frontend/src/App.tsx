@@ -162,7 +162,8 @@ function App() {
       if (res.ok) {
         
         setIsAuthenticated(true);
-        await fetchUserProfile();
+        const profile = await fetchUserProfile();
+        setUserProfile(profile);
         fetchHHVacancies();
         alert("Вы успешно вошли");
       } else {
@@ -399,30 +400,64 @@ function App() {
       employment_type: userProfile?.employment_type || "full",
       about: userProfile?.about || "",
     });
+  
+    useEffect(() => {
+      if (userProfile) {
+        setFormData({
+          full_name: userProfile.full_name || "",
+          phone: userProfile.phone || "",
+          city: userProfile.city || "",
+          position: userProfile.position || "",
+          experience_years: userProfile.experience_years?.toString() || "",
+          skills: userProfile.skills || "",
+          desired_salary: userProfile.desired_salary?.toString() || "",
+          work_format: userProfile.work_format || "office",
+          employment_type: userProfile.employment_type || "full",
+          about: userProfile.about || "",
+        });
+      }
+    }, [userProfile]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   
-  const dataToSend: Partial<UserProfile> = {};
+  // Используем Record с конкретными типами
+  const dataToSend: Record<string, string | number | null> = {};
   
-  // Добавляем только заполненные поля
-  if (formData.full_name) dataToSend.full_name = formData.full_name;
-  if (formData.phone) dataToSend.phone = formData.phone;
-  if (formData.city) dataToSend.city = formData.city;
-  if (formData.position) dataToSend.position = formData.position;
-  if (formData.experience_years) {
-    dataToSend.experience_years = parseInt(formData.experience_years) || null;
-  }
-  if (formData.skills) dataToSend.skills = formData.skills;
-  if (formData.desired_salary) {
-    dataToSend.desired_salary = parseInt(formData.desired_salary) || null;
-  }
-  if (formData.work_format) dataToSend.work_format = formData.work_format;
-  if (formData.employment_type) dataToSend.employment_type = formData.employment_type;
-  if (formData.about) dataToSend.about = formData.about;
+  // Обрабатываем каждое поле отдельно с правильной типизацией
+  const formFields = {
+    full_name: formData.full_name,
+    phone: formData.phone,
+    city: formData.city,
+    position: formData.position,
+    experience_years: formData.experience_years,
+    skills: formData.skills,
+    desired_salary: formData.desired_salary,
+    work_format: formData.work_format,
+    employment_type: formData.employment_type,
+    about: formData.about,
+  };
   
-  await updateProfile(dataToSend);
-  setShowProfile(false);
+  // Преобразуем данные с учетом типов
+  Object.entries(formFields).forEach(([key, value]) => {
+    if (key === 'experience_years' || key === 'desired_salary') {
+      // Для числовых полей
+      dataToSend[key] = value === '' ? null : (value ? parseInt(value as string) || null : null);
+    } else {
+      // Для строковых полей
+      dataToSend[key] = value === '' ? null : value;
+    }
+  });
+  
+  console.log("Отправка данных профиля:", dataToSend);
+  
+  const success = await updateProfile(dataToSend as Partial<UserProfile>);
+  if (success) {
+    // Обновляем локальный профиль
+    const updatedProfile = await fetchUserProfile();
+    setUserProfile(updatedProfile);
+    setShowProfile(false);
+  }
 };
 
     return (
