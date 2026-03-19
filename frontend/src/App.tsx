@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SalaryAnalysis from "./SalaryAnalysis";
 
 function App() {
   const [vacancies, setVacancies] = useState<Vacancy[]>([]);
@@ -14,6 +15,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   // const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
   const API_URL = "http://localhost:8000"
@@ -1002,6 +1004,22 @@ function App() {
               >
                 Искать по моему профилю
               </button>
+
+              <button
+                onClick={() => setShowAnalysis(true)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+                title="ML анализ зарплат"
+              >
+                📊 Анализ зарплат
+              </button>
               
               <button
                 onClick={handleLogout}
@@ -1177,6 +1195,14 @@ function App() {
 
       {/* Модальное окно профиля */}
       {showProfile && <ProfileForm />}
+      {/* Модальное окно анализа */}
+      {showAnalysis && (
+        <SalaryAnalysis
+          vacancies={vacancies}
+          onClose={() => setShowAnalysis(false)}
+          API_URL={API_URL}
+        />
+      )}
     </div>
   );
 }

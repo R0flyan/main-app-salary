@@ -50,7 +50,6 @@ def update_profile(
 
 @router.get("/profile", response_model=schemas.ProfileResponse)
 async def get_profile(current_user: models.User = Depends(get_current_user)):
-    # Возвращаем только профиль
     return current_user
 
 @router.post("/register", response_model=schemas.UserResponse)
