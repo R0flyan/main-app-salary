@@ -1,7 +1,13 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON
+#/ app/models/user.py
+from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, Enum as SQLEnum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
+import enum
+
+class UserRole(str, enum.Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 class User(Base):
     __tablename__ = "users"
@@ -22,3 +28,4 @@ class User(Base):
     work_format = Column(String, nullable=True)
     employment_type = Column(String, nullable=True)
     about = Column(Text, nullable=True)
+    role = Column(String(20), default="user", nullable=False)

@@ -1,3 +1,4 @@
+#/ app/routers/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,6 +9,8 @@ from app.auth.auth import get_password_hash, verify_password, create_access_toke
 from datetime import timedelta
 from app.core.config import settings
 from app.schemas.user import UserResponse, TokenResponse
+from app.auth.rbac import require_user, require_admin
+from app.models.user import UserRole
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -16,7 +19,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 #     return current_user
 
 @router.get("/me", response_model=schemas.UserProfileResponse)
-def read_users_me(current_user: models.User = Depends(get_current_user)):
+def read_users_me(current_user: models.User = Depends(require_user)):
     return current_user
 
 # @router.put("/profile", response_model=schemas.UserResponse)
@@ -37,7 +40,7 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
 @router.put("/profile", response_model=schemas.UserProfileResponse)
 def update_profile(
     profile: schemas.ProfileUpdate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(require_user),
     db: Session = Depends(get_db)
 ):
     for key, value in profile.dict(exclude_unset=True).items():
@@ -47,6 +50,30 @@ def update_profile(
     db.refresh(current_user)
 
     return current_user
+
+@router.put("/users/{user_id}/role")
+def change_user_role(
+    user_id: int,
+    new_role: UserRole,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin)  # Только админ
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.role = new_role
+    db.commit()
+    db.refresh(user)
+    
+    return {"message": f"Role for user {user.email} changed to {new_role.value}"}
+
+@router.get("/users", response_model=list[schemas.UserProfileResponse])
+def get_all_users(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin)  # Только админ
+):
+    return db.query(models.User).all()
 
 @router.get("/profile", response_model=schemas.ProfileResponse)
 async def get_profile(current_user: models.User = Depends(get_current_user)):

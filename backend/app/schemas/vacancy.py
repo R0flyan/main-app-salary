@@ -1,3 +1,4 @@
+#/ app/schemas/vacancy.py
 from pydantic import BaseModel
 
 class VacancyBase(BaseModel):

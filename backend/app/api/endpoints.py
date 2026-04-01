@@ -1,3 +1,4 @@
+#/app/api/endpoints.py
 from fastapi import APIRouter
 from app.routers import auth, vacancies, analysis
 

@@ -1,3 +1,4 @@
+#/ app/schemas/user.py
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
@@ -30,14 +31,13 @@ class ProfileBase(BaseModel):
 class ProfileUpdate(ProfileBase):
     pass
 
-class ProfileResponse(ProfileBase):  # Добавьте этот класс
+class ProfileResponse(ProfileBase):
     user_id: int
     
     class Config:
         from_attributes = True
 
 class UserProfileResponse(UserResponse):
-    # Добавляем поля профиля
     full_name: Optional[str] = None
     phone: Optional[str] = None
     city: Optional[str] = None
@@ -48,6 +48,7 @@ class UserProfileResponse(UserResponse):
     work_format: Optional[str] = None
     employment_type: Optional[str] = None
     about: Optional[str] = None
+    role: Optional[str] = None
 
 class TokenResponse(BaseModel):
     access_token: str
