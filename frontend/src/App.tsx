@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import SalaryAnalysis from "./SalaryAnalysis";
 import { useAuth } from './contexts/AuthContext';
 import type { UserProfile } from './contexts/AuthContext';
+import VacanciesManager from "./components/VacanciesManager";
 
 function App() {
     const { 
@@ -1108,6 +1109,8 @@ function App() {
                             ))}
                         </div>
                     </div>
+
+                    <VacanciesManager />
                 </>
             )}
 

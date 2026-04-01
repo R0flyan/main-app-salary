@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import router
 from app.core.config import settings
 from app.models.database import Base, engine
+from app.models import user, vacancy, vacancy_file
 
 Base.metadata.create_all(bind=engine)
 
