@@ -8,6 +8,8 @@ load_dotenv()
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Salary Analytics API"
     VERSION: str = "0.1.0"
+    
+    HH_API_URL: str = os.getenv("HH_API_URL", "https://api.hh.ru/vacancies")
 
     # --- Настройки базы данных ---
     POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")

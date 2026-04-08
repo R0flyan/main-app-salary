@@ -1,9 +1,13 @@
 // frontend/src/App.tsx
+import { Routes, Route, Navigate } from "react-router-dom";
+import PublicHomePage from "./pages/PublicHomePage";
+import LoginPage from "./pages/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import VacanciesManager from "./components/VacanciesManager";
 import { useEffect, useState } from "react";
 import SalaryAnalysis from "./SalaryAnalysis";
 import { useAuth } from './contexts/AuthContext';
 import type { UserProfile } from './contexts/AuthContext';
-import VacanciesManager from "./components/VacanciesManager";
 
 function App() {
     const { 
@@ -16,13 +20,13 @@ function App() {
         refreshToken 
     } = useAuth();
     
-    const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-    const [title, setTitle] = useState("");
-    const [company, setCompany] = useState("");
-    const [minSalary, setMinSalary] = useState("");
+    //const [vacancies, setVacancies] = useState<Vacancy[]>([]);
+    //const [title, setTitle] = useState("");
+    //const [company, setCompany] = useState("");
+    //const [minSalary, setMinSalary] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
+    //const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState<"login" | "register">("login");
     const [showProfile, setShowProfile] = useState(false);
     const [showAnalysis, setShowAnalysis] = useState(false);
@@ -102,7 +106,7 @@ function App() {
             // вход (логин) - используем функцию из контекста
             const success = await login(email, password);
             if (success) {
-                fetchHHVacancies();
+                //fetchHHVacancies();
                 alert("Вы успешно вошли");
             } else {
                 alert("Ошибка входа: Проверь логин или пароль");
@@ -113,120 +117,120 @@ function App() {
         }
     };
 
-    interface Vacancy {
-        id: number;
-        title: string;
-        company: string;
-        salary: number;
-        salaryTo?: number | null;
-        currency?: string;
-        url: string | undefined;
-    }
+    // interface Vacancy {
+    //     id: number;
+    //     title: string;
+    //     company: string;
+    //     salary: number;
+    //     salaryTo?: number | null;
+    //     currency?: string;
+    //     url: string | undefined;
+    // }
 
-    interface HHVacancy {
-        id: string;
-        name: string;
-        employer?: { name: string };
-        salary?: {
-            from: number | null;
-            to: number | null;
-            currency?: string;
-        };
-        alternate_url: string;
-    }
+    // interface HHVacancy {
+    //     id: string;
+    //     name: string;
+    //     employer?: { name: string };
+    //     salary?: {
+    //         from: number | null;
+    //         to: number | null;
+    //         currency?: string;
+    //     };
+    //     alternate_url: string;
+    // }
 
-    const handleClear = () => {
-        setTitle("");
-        setCompany("");
-        setMinSalary("");
-    };
+    // const handleClear = () => {
+    //     setTitle("");
+    //     setCompany("");
+    //     setMinSalary("");
+    // };
 
-    const fetchHHVacancies = async (useProfile = false) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams();
+    // const fetchHHVacancies = async (useProfile = false) => {
+    //     setLoading(true);
+    //     try {
+    //         const params = new URLSearchParams();
 
-            let searchTitle = title;
-            let searchMinSalary = minSalary;
+    //         let searchTitle = title;
+    //         let searchMinSalary = minSalary;
 
-            if (useProfile && user) {
-                if (!searchTitle && user.position) {
-                    searchTitle = user.position;
-                }
-                if (!searchMinSalary && user.desired_salary) {
-                    searchMinSalary = user.desired_salary.toString();
-                }
-            }
+    //         if (useProfile && user) {
+    //             if (!searchTitle && user.position) {
+    //                 searchTitle = user.position;
+    //             }
+    //             if (!searchMinSalary && user.desired_salary) {
+    //                 searchMinSalary = user.desired_salary.toString();
+    //             }
+    //         }
 
-            if (!searchTitle.trim() && !company.trim() && !searchMinSalary.trim()) {
-                params.append("text", "разработчик");
-            } else {
-                let searchText = "";
-                if (searchTitle.trim()) searchText += searchTitle.trim();
-                if (company.trim()) {
-                    if (searchText) searchText += " ";
-                    searchText += company.trim();
-                }
-                if (searchText) params.append("text", searchText);
-            }
+    //         if (!searchTitle.trim() && !company.trim() && !searchMinSalary.trim()) {
+    //             params.append("text", "разработчик");
+    //         } else {
+    //             let searchText = "";
+    //             if (searchTitle.trim()) searchText += searchTitle.trim();
+    //             if (company.trim()) {
+    //                 if (searchText) searchText += " ";
+    //                 searchText += company.trim();
+    //             }
+    //             if (searchText) params.append("text", searchText);
+    //         }
 
-            params.append("per_page", "20");
+    //         params.append("per_page", "20");
 
-            if (searchMinSalary.trim()) {
-                params.append("salary", searchMinSalary);
-            }
-            params.append("currency", "RUR");
-            params.append("only_with_salary", "true");
+    //         if (searchMinSalary.trim()) {
+    //             params.append("salary", searchMinSalary);
+    //         }
+    //         params.append("currency", "RUR");
+    //         params.append("only_with_salary", "true");
 
-            const res = await fetch(`https://api.hh.ru/vacancies?${params.toString()}`);
-            if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
+    //         const res = await fetch(`https://api.hh.ru/vacancies?${params.toString()}`);
+    //         if (!res.ok) throw new Error("Ошибка загрузки вакансий hh.ru");
 
-            const data = await res.json();
+    //         const data = await res.json();
 
-            const hhData: Vacancy[] = data.items
-                .filter((v: HHVacancy) => {
-                    if (!v.salary || v.salary.currency !== "RUR" || !v.salary.from || v.salary.from === 0) {
-                        return false;
-                    }
-                    const minSalaryNum = searchMinSalary.trim() ? Number(searchMinSalary) : 0;
-                    if (minSalaryNum > 0 && v.salary.from < minSalaryNum) return false;
-                    if (company.trim()) {
-                        const companyName = v.employer?.name?.toLowerCase() || "";
-                        if (!companyName.includes(company.toLowerCase().trim())) return false;
-                    }
-                    if (searchTitle.trim()) {
-                        const vacancyTitle = v.name.toLowerCase();
-                        if (!vacancyTitle.includes(searchTitle.toLowerCase().trim())) return false;
-                    }
-                    return true;
-                })
-                .map((v: HHVacancy) => ({
-                    id: Number(v.id),
-                    title: v.name,
-                    company: v.employer?.name || "Не указано",
-                    salary: v.salary?.from ?? 0,
-                    salaryTo: v.salary?.to || null,
-                    currency: v.salary?.currency,
-                    url: v.alternate_url,
-                }));
+    //         const hhData: Vacancy[] = data.items
+    //             .filter((v: HHVacancy) => {
+    //                 if (!v.salary || v.salary.currency !== "RUR" || !v.salary.from || v.salary.from === 0) {
+    //                     return false;
+    //                 }
+    //                 const minSalaryNum = searchMinSalary.trim() ? Number(searchMinSalary) : 0;
+    //                 if (minSalaryNum > 0 && v.salary.from < minSalaryNum) return false;
+    //                 if (company.trim()) {
+    //                     const companyName = v.employer?.name?.toLowerCase() || "";
+    //                     if (!companyName.includes(company.toLowerCase().trim())) return false;
+    //                 }
+    //                 if (searchTitle.trim()) {
+    //                     const vacancyTitle = v.name.toLowerCase();
+    //                     if (!vacancyTitle.includes(searchTitle.toLowerCase().trim())) return false;
+    //                 }
+    //                 return true;
+    //             })
+    //             .map((v: HHVacancy) => ({
+    //                 id: Number(v.id),
+    //                 title: v.name,
+    //                 company: v.employer?.name || "Не указано",
+    //                 salary: v.salary?.from ?? 0,
+    //                 salaryTo: v.salary?.to || null,
+    //                 currency: v.salary?.currency,
+    //                 url: v.alternate_url,
+    //             }));
 
-            setVacancies(hhData);
-        } catch (err) {
-            console.error(err);
-            alert("Ошибка получения вакансий");
-        } finally {
-            setLoading(false);
-        }
-    };
+    //         setVacancies(hhData);
+    //     } catch (err) {
+    //         console.error(err);
+    //         alert("Ошибка получения вакансий");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
-    useEffect(() => {
-        if (isAuthenticated) {
-            const timeoutId = setTimeout(() => {
-                fetchHHVacancies();
-            }, 800);
-            return () => clearTimeout(timeoutId);
-        }
-    }, [title, company, minSalary, isAuthenticated]);
+    // useEffect(() => {
+    //     if (isAuthenticated) {
+    //         const timeoutId = setTimeout(() => {
+    //             fetchHHVacancies();
+    //         }, 800);
+    //         return () => clearTimeout(timeoutId);
+    //     }
+    // }, [title, company, minSalary, isAuthenticated]);
 
     const handleLogout = async () => {
         await logout();
@@ -679,452 +683,98 @@ function App() {
         return <div style={{ color: "white", textAlign: "center", padding: "50px" }}>Загрузка...</div>;
     }
 
-    return (
-        <div
-            style={{
-                width: "100vw",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "100vh",
-                fontFamily: "Arial, sans-serif",
-            }}
-        >
-            {!isAuthenticated ? (
-                <div
-                    style={{
-                        width: "60vw",
-                        height: "75vh",
-                        backgroundColor: "#333333ff",
-                        boxShadow: "0px 0px 13px 13px #000000",
-                        border: "1px solid black",
-                        borderColor: "#333333ff",
-                        borderRadius: "10px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <div style={{ textAlign: "center", marginBottom: "30px" }}>
-                        <h1 style={{
-                            margin: "0 0 8px 0",
-                            fontSize: "78px",
-                            fontWeight: "700",
-                            background: "linear-gradient(135deg, #ead410ff 0%, #dc5e0fff 100%)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                            backgroundClip: "text"
-                        }}>
-                            Joby
-                        </h1>
-                        <p style={{
-                            margin: "0",
-                            color: "#ffffffff",
-                            fontSize: "16px",
-                            fontStyle: "italic"
-                        }}>
-                            Найди работу мечты
-                        </p>
-                    </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            background: "#b3b3b3ff",
-                            borderRadius: "12px",
-                            padding: "4px",
-                            marginBottom: "30px",
-                        }}
-                    >
-                        <button
-                            onClick={() => setMode("login")}
-                            style={{
-                                flex: 1,
-                                padding: "12px 16px",
-                                borderRadius: "8px",
-                                border: "none",
-                                background: mode === "login" ? "white" : "transparent",
-                                color: mode === "login" ? "#333" : "#666",
-                                fontWeight: "600",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Вход
-                        </button>
-                        <button
-                            onClick={() => setMode("register")}
-                            style={{
-                                flex: 1,
-                                padding: "12px 16px",
-                                borderRadius: "8px",
-                                border: "none",
-                                background: mode === "register" ? "white" : "transparent",
-                                color: mode === "register" ? "#333" : "#666",
-                                fontWeight: "600",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Регистрация
-                        </button>
-                    </div>
-
-                    <div style={{ width: "80%" }}>
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: "16px",
-                                borderRadius: "12px",
-                                border: "1px solid #e1e5e9",
-                                fontSize: "16px",
-                                outline: "none",
-                                boxSizing: "border-box",
-                            }}
-                        />
-                    </div>
-                    <div style={{ width: "80%" }}>
-                        <input
-                            type="password"
-                            placeholder="Пароль"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: "16px",
-                                borderRadius: "12px",
-                                border: "1px solid #e1e5e9",
-                                fontSize: "16px",
-                                outline: "none",
-                                boxSizing: "border-box",
-                            }}
-                        />
-                    </div>
-                    <button
-                        onClick={handleAuth}
-                        style={{
-                            width: "40%",
-                            padding: "16px",
-                            borderRadius: "12px",
-                            border: "none",
-                            background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
-                            color: "white",
-                            fontSize: "16px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            marginTop: "8px",
-                        }}
-                    >
-                        {mode === "login" ? "Войти в аккаунт" : "Создать аккаунт"}
-                    </button>
-                </div>
-            ) : (
-                <>
-                    <div style={{
-                        width: "100%",
-                        maxWidth: "1200px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "30px",
-                        flexWrap: "wrap",
-                        gap: "20px",
-                    }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                            <h1 style={{
-                                margin: 0,
-                                fontSize: "48px",
-                                fontWeight: "700",
-                                background: "linear-gradient(135deg, #ead410ff 0%, #dc5e0fff 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text"
-                            }}>
-                                Joby
-                            </h1>
-
-                            {user && (
-                                <div style={{
-                                    padding: "10px 20px",
-                                    background: "rgba(234, 212, 16, 0.1)",
-                                    borderRadius: "8px",
-                                    border: "1px solid rgba(234, 212, 16, 0.3)",
-                                    color: "#fff",
-                                }}>
-                                    <div style={{ fontWeight: "bold", fontSize: "16px" }}>
-                                        {user.full_name || user.email}
-                                    </div>
-                                    {user.position && (
-                                        <div style={{ fontSize: "14px", color: "#aaa" }}>
-                                            {user.position}
-                                        </div>
-                                    )}
-                                    <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
-                                        Роль: {user.role}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div style={{ display: "flex", gap: "10px" }}>
-                            <button
-                                onClick={() => setShowProfile(true)}
-                                style={{
-                                    padding: "10px 20px",
-                                    borderRadius: "6px",
-                                    border: "none",
-                                    background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    fontWeight: "600",
-                                }}
-                            >
-                                Личный кабинет
-                            </button>
-
-                            {isAdmin && (
-                                <button
-                                    onClick={() => {
-                                        fetchUsersList();
-                                        setShowAdminPanel(true);
-                                    }}
-                                    style={{
-                                        padding: "10px 20px",
-                                        borderRadius: "6px",
-                                        border: "none",
-                                        background: "linear-gradient(135deg, #dc5e0fff 0%, #b04a0cff 100%)",
-                                        color: "white",
-                                        cursor: "pointer",
-                                        fontWeight: "600",
-                                    }}
-                                >
-                                    Админ-панель
-                                </button>
-                            )}
-
-                            <button
-                                onClick={() => fetchHHVacancies(true)}
-                                style={{
-                                    padding: "10px 20px",
-                                    borderRadius: "6px",
-                                    border: "none",
-                                    background: "linear-gradient(135deg, #708964ff 0%, #5a7249ff 100%)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    fontWeight: "600",
-                                }}
-                                title="Искать по данным профиля"
-                            >
-                                Искать по моему профилю
-                            </button>
-
-                            <button
-                                onClick={() => setShowAnalysis(true)}
-                                style={{
-                                    padding: "10px 20px",
-                                    borderRadius: "6px",
-                                    border: "none",
-                                    background: "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    fontWeight: "600",
-                                }}
-                                title="ML анализ зарплат"
-                            >
-                                📊 Анализ зарплат
-                            </button>
-
-                            <button
-                                onClick={handleLogout}
-                                style={{
-                                    padding: "10px 20px",
-                                    borderRadius: "6px",
-                                    border: "none",
-                                    backgroundColor: "#444",
-                                    color: "white",
-                                    cursor: "pointer",
-                                    fontWeight: "600",
-                                }}
-                            >
-                                Выйти
-                            </button>
-                        </div>
-                    </div>
-
-                    <h3 style={{ color: "white", marginBottom: "20px" }}>Параметры поиска:</h3>
-
-                    <div
-                        style={{
-                            display: "grid",
-                            gap: "10px",
-                            justifyContent: "center",
-                            marginBottom: "30px",
-                            width: "100%",
-                            maxWidth: "800px",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                        }}
-                    >
-                        <input
-                            type="text"
-                            placeholder="Название вакансии"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            style={{
-                                padding: "12px",
-                                borderRadius: "6px",
-                                border: "1px solid #666",
-                                background: "#222",
-                                color: "white",
-                            }}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Компания"
-                            value={company}
-                            onChange={(e) => setCompany(e.target.value)}
-                            style={{
-                                padding: "12px",
-                                borderRadius: "6px",
-                                border: "1px solid #666",
-                                background: "#222",
-                                color: "white",
-                            }}
-                        />
-                        <input
-                            type="number"
-                            placeholder="Мин. зарплата"
-                            value={minSalary}
-                            onChange={(e) => setMinSalary(e.target.value)}
-                            style={{
-                                padding: "12px",
-                                borderRadius: "6px",
-                                border: "1px solid #666",
-                                background: "#222",
-                                color: "white",
-                            }}
-                        />
-                        <button
-                            onClick={() => fetchHHVacancies(false)}
-                            style={{
-                                padding: "12px 20px",
-                                borderRadius: "6px",
-                                border: "none",
-                                backgroundColor: "#708964ff",
-                                color: "white",
-                                cursor: "pointer",
-                                fontWeight: "600",
-                            }}
-                        >
-                            Поиск
-                        </button>
-                        <button
-                            onClick={handleClear}
-                            style={{
-                                padding: "12px 20px",
-                                borderRadius: "6px",
-                                border: "none",
-                                backgroundColor: "#860e0eff",
-                                color: "white",
-                                cursor: "pointer",
-                                fontWeight: "600",
-                            }}
-                        >
-                            Очистить фильтры
-                        </button>
-                    </div>
-
-                    {loading && <p style={{ color: "white", textAlign: "center" }}>Загрузка вакансий...</p>}
-
-                    <div style={{ width: "100%", maxWidth: "1200px" }}>
-                        {vacancies.length === 0 && !loading && (
-                            <p style={{ color: "white", textAlign: "center" }}>
-                                Нет подходящих вакансий. Попробуйте изменить параметры поиска.
-                            </p>
-                        )}
-
-                        <div style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                            gap: "20px"
-                        }}>
-                            {vacancies.map((v) => (
-                                <div
-                                    key={v.id}
-                                    style={{
-                                        background: "#333",
-                                        padding: "20px",
-                                        borderRadius: "10px",
-                                        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                                        border: "1px solid #444",
-                                        transition: "transform 0.2s, box-shadow 0.2s",
-                                        cursor: "pointer",
-                                    }}
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.transform = "translateY(-5px)";
-                                        e.currentTarget.style.boxShadow = "0 8px 20px rgba(234, 212, 16, 0.2)";
-                                        e.currentTarget.style.borderColor = "#ead410ff";
-                                    }}
-                                    onMouseOut={(e) => {
-                                        e.currentTarget.style.transform = "translateY(0)";
-                                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
-                                        e.currentTarget.style.borderColor = "#444";
-                                    }}
-                                    onClick={() => window.open(v.url, '_blank')}
-                                >
-                                    <h3 style={{ margin: "0 0 10px 0", color: "#fff" }}>
-                                        {v.title}
-                                    </h3>
-                                    <p style={{ margin: "0 0 10px 0", color: "#aaa" }}>
-                                        {v.company}
-                                    </p>
-                                    <p style={{ margin: "0 0 15px 0", color: "#4CAF50", fontWeight: "bold" }}>
-                                        {v.salary.toLocaleString()} ₽
-                                        {v.salaryTo && ` - ${v.salaryTo.toLocaleString()} ₽`}
-                                    </p>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.open(v.url, '_blank');
-                                        }}
-                                        style={{
-                                            padding: "8px 16px",
-                                            borderRadius: "6px",
-                                            border: "none",
-                                            background: "linear-gradient(135deg, #f5ab17ff 0%, #e0b60aff 100%)",
-                                            color: "white",
-                                            cursor: "pointer",
-                                            fontWeight: "600",
-                                            fontSize: "14px",
-                                        }}
-                                    >
-                                        Открыть на hh.ru
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <VacanciesManager />
-                </>
-            )}
-
-            {showProfile && <ProfileForm />}
-            {showAnalysis && (
-                <SalaryAnalysis
-                    vacancies={vacancies}
-                    onClose={() => setShowAnalysis(false)}
-                    API_URL={API_URL}
-                />
-            )}
-            {showAdminPanel && <AdminPanel />}
+  return (
+    <div
+      style={{
+        width: "100vw",
+        minHeight: "100vh",
+        fontFamily: "Arial, sans-serif",
+        background: "#1f1f1f",
+      }}
+    >
+      {authLoading ? (
+        <div style={{ color: "white", textAlign: "center", padding: "50px" }}>
+          Загрузка...
         </div>
-    );
+      ) : (
+        <Routes>
+          <Route path="/" element={<PublicHomePage />} />
+
+          <Route
+            path="/login"
+            element={
+              !isAuthenticated ? (
+                <LoginPage
+                  email={email}
+                  password={password}
+                  mode={mode}
+                  setEmail={setEmail}
+                  setPassword={setPassword}
+                  setMode={setMode}
+                  handleAuth={handleAuth}
+                />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              isAuthenticated ? (
+                <main
+                  style={{
+                    width: "100%",
+                    maxWidth: "1200px",
+                    margin: "0 auto",
+                    padding: "20px",
+                    color: "white",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+                    <h1>Личный кабинет</h1>
+
+                    <button
+                      onClick={handleLogout}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: "#444",
+                        color: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Выйти
+                    </button>
+                  </div>
+
+                  <p>Управление внутренними вакансиями и профилем.</p>
+
+                  <VacanciesManager />
+                </main>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      )}
+
+      {showProfile && <ProfileForm />}
+      {showAnalysis && (
+        <SalaryAnalysis
+          vacancies={[]}
+          onClose={() => setShowAnalysis(false)}
+          API_URL={API_URL}
+        />
+      )}
+      {showAdminPanel && <AdminPanel />}
+    </div>
+  );
 }
 
 export default App;

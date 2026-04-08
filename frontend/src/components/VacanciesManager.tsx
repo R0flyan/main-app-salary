@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type {
@@ -278,190 +279,187 @@ export default function VacanciesManager() {
   const pageInfo = useMemo(() => `${page} / ${pages}`, [page, pages]);
 
   return (
-    <div style={{ width: "100%", maxWidth: "1200px", marginTop: 30, color: "white" }}>
-      <h2>Управление вакансиями</h2>
+    <><Helmet>
+      <title>Личный кабинет — Joby</title>
+      <meta name="description" content="Управление вакансиями пользователя." />
+      <meta name="robots" content="noindex,nofollow" />
+      <link rel="canonical" href="http://localhost:5173/dashboard" />
+    </Helmet><div style={{ width: "100%", maxWidth: "1200px", marginTop: 30, color: "white" }}>
+        <h2>Управление вакансиями</h2>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
-        <input
-          value={search}
-          placeholder="Поиск"
-          onChange={(e) => updateQuery({ search: e.target.value, page: 1 })}
-        />
-        <input
-          value={company}
-          placeholder="Компания"
-          onChange={(e) => updateQuery({ company: e.target.value, page: 1 })}
-        />
-        <input
-          type="number"
-          value={minSalary}
-          placeholder="Мин. зарплата"
-          onChange={(e) => updateQuery({ min_salary: e.target.value, page: 1 })}
-        />
-        <select value={status} onChange={(e) => updateQuery({ status: e.target.value, page: 1 })}>
-          <option value="">Все статусы</option>
-          <option value="draft">draft</option>
-          <option value="published">published</option>
-          <option value="archived">archived</option>
-        </select>
-        <select value={sortBy} onChange={(e) => updateQuery({ sort_by: e.target.value, page: 1 })}>
-          <option value="created_at">Сначала новые</option>
-          <option value="salary">Зарплата</option>
-          <option value="title">Название</option>
-          <option value="company">Компания</option>
-        </select>
-        <select value={sortOrder} onChange={(e) => updateQuery({ sort_order: e.target.value, page: 1 })}>
-          <option value="desc">DESC</option>
-          <option value="asc">ASC</option>
-        </select>
-      </div>
-
-      <div style={{ background: "#2f2f2f", padding: 16, borderRadius: 10, marginBottom: 20 }}>
-        <h3>{editingId ? "Редактирование вакансии" : "Новая вакансия"}</h3>
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
           <input
-            value={form.title}
-            placeholder="Название"
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
+            value={search}
+            placeholder="Поиск"
+            onChange={(e) => updateQuery({ search: e.target.value, page: 1 })} />
           <input
-            value={form.company}
+            value={company}
             placeholder="Компания"
-            onChange={(e) => setForm({ ...form, company: e.target.value })}
-          />
+            onChange={(e) => updateQuery({ company: e.target.value, page: 1 })} />
           <input
             type="number"
-            value={form.salary}
-            placeholder="Зарплата"
-            onChange={(e) => setForm({ ...form, salary: e.target.value })}
-          />
-          <textarea
-            value={form.description}
-            placeholder="Описание"
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-          <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as VacancyStatus })}>
+            value={minSalary}
+            placeholder="Мин. зарплата"
+            onChange={(e) => updateQuery({ min_salary: e.target.value, page: 1 })} />
+          <select value={status} onChange={(e) => updateQuery({ status: e.target.value, page: 1 })}>
+            <option value="">Все статусы</option>
             <option value="draft">draft</option>
             <option value="published">published</option>
             <option value="archived">archived</option>
           </select>
-          <select
-            value={form.employment_type}
-            onChange={(e) => setForm({ ...form, employment_type: e.target.value as EmploymentType | "" })}
-          >
-            <option value="">Тип занятости</option>
-            <option value="full">full</option>
-            <option value="part">part</option>
-            <option value="project">project</option>
-            <option value="internship">internship</option>
+          <select value={sortBy} onChange={(e) => updateQuery({ sort_by: e.target.value, page: 1 })}>
+            <option value="created_at">Сначала новые</option>
+            <option value="salary">Зарплата</option>
+            <option value="title">Название</option>
+            <option value="company">Компания</option>
           </select>
-          <select
-            value={form.work_format}
-            onChange={(e) => setForm({ ...form, work_format: e.target.value as WorkFormat | "" })}
-          >
-            <option value="">Формат работы</option>
-            <option value="office">office</option>
-            <option value="remote">remote</option>
-            <option value="hybrid">hybrid</option>
+          <select value={sortOrder} onChange={(e) => updateQuery({ sort_order: e.target.value, page: 1 })}>
+            <option value="desc">DESC</option>
+            <option value="asc">ASC</option>
           </select>
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={saveVacancy}>{editingId ? "Сохранить" : "Создать"}</button>
-            {editingId && (
-              <button
-                onClick={() => {
-                  setEditingId(null);
-                  setForm(emptyForm);
-                }}
-              >
-                Отмена
-              </button>
-            )}
-          </div>
         </div>
-      </div>
 
-      <div style={{ marginBottom: 12 }}>
-        Всего: {total}
-      </div>
+        <div style={{ background: "#2f2f2f", padding: 16, borderRadius: 10, marginBottom: 20 }}>
+          <h3>{editingId ? "Редактирование вакансии" : "Новая вакансия"}</h3>
+          <div style={{ display: "grid", gap: 10 }}>
+            <input
+              value={form.title}
+              placeholder="Название"
+              onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <input
+              value={form.company}
+              placeholder="Компания"
+              onChange={(e) => setForm({ ...form, company: e.target.value })} />
+            <input
+              type="number"
+              value={form.salary}
+              placeholder="Зарплата"
+              onChange={(e) => setForm({ ...form, salary: e.target.value })} />
+            <textarea
+              value={form.description}
+              placeholder="Описание"
+              onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as VacancyStatus })}>
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+              <option value="archived">archived</option>
+            </select>
+            <select
+              value={form.employment_type}
+              onChange={(e) => setForm({ ...form, employment_type: e.target.value as EmploymentType | "" })}
+            >
+              <option value="">Тип занятости</option>
+              <option value="full">full</option>
+              <option value="part">part</option>
+              <option value="project">project</option>
+              <option value="internship">internship</option>
+            </select>
+            <select
+              value={form.work_format}
+              onChange={(e) => setForm({ ...form, work_format: e.target.value as WorkFormat | "" })}
+            >
+              <option value="">Формат работы</option>
+              <option value="office">office</option>
+              <option value="remote">remote</option>
+              <option value="hybrid">hybrid</option>
+            </select>
 
-      {loading && <p>Загрузка...</p>}
-      {error && <p style={{ color: "tomato" }}>{error}</p>}
-
-      <div style={{ display: "grid", gap: 12 }}>
-        {items.map((vacancy) => (
-          <div key={vacancy.id} style={{ background: "#333", padding: 16, borderRadius: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div>
-                <h3 style={{ margin: "0 0 8px 0" }}>{vacancy.title}</h3>
-                <div>{vacancy.company}</div>
-                <div>{vacancy.salary.toLocaleString()} ₽</div>
-                <div>Статус: {vacancy.status}</div>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, alignItems: "start", flexWrap: "wrap" }}>
-                <button onClick={() => startEdit(vacancy)}>Редактировать</button>
-                <button onClick={() => selectVacancy(vacancy)}>Файлы</button>
-                <button onClick={() => deleteVacancy(vacancy.id)}>Удалить</button>
-              </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={saveVacancy}>{editingId ? "Сохранить" : "Создать"}</button>
+              {editingId && (
+                <button
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm(emptyForm);
+                  } }
+                >
+                  Отмена
+                </button>
+              )}
             </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 20 }}>
-        <button disabled={page <= 1} onClick={() => updateQuery({ page: page - 1 })}>
-          Назад
-        </button>
-        <span>{pageInfo}</span>
-        <button disabled={page >= pages} onClick={() => updateQuery({ page: page + 1 })}>
-          Вперёд
-        </button>
-      </div>
+        <div style={{ marginBottom: 12 }}>
+          Всего: {total}
+        </div>
 
-      {selectedVacancy && (
-        <div style={{ marginTop: 30, background: "#2c2c2c", padding: 16, borderRadius: 10 }}>
-          <h3>Файлы вакансии: {selectedVacancy.title}</h3>
+        {loading && <p>Загрузка...</p>}
+        {error && <p style={{ color: "tomato" }}>{error}</p>}
 
-          <input
-            type="file"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadFile(file);
-            }}
-          />
-          {fileUploading && <p>Файл загружается...</p>}
-
-          <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            {files.length === 0 && <div>Файлы не прикреплены</div>}
-            {files.map((file) => (
-              <div
-                key={file.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  alignItems: "center",
-                  background: "#3a3a3a",
-                  padding: 10,
-                  borderRadius: 8,
-                }}
-              >
+        <div style={{ display: "grid", gap: 12 }}>
+          {items.map((vacancy) => (
+            <div key={vacancy.id} style={{ background: "#333", padding: 16, borderRadius: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <div>
-                  <div>{file.original_name}</div>
-                  <div style={{ fontSize: 12, color: "#bbb" }}>
-                    {file.mime_type} · {(file.size / 1024).toFixed(1)} KB
-                  </div>
+                  <h3 style={{ margin: "0 0 8px 0" }}>{vacancy.title}</h3>
+                  <div>{vacancy.company}</div>
+                  <div>{vacancy.salary.toLocaleString()} ₽</div>
+                  <div>Статус: {vacancy.status}</div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => openFile(file.id)}>Открыть</button>
-                  <button onClick={() => deleteFile(file.id)}>Удалить</button>
+
+                <div style={{ display: "flex", gap: 8, alignItems: "start", flexWrap: "wrap" }}>
+                  <button onClick={() => startEdit(vacancy)}>Редактировать</button>
+                  <button onClick={() => selectVacancy(vacancy)}>Файлы</button>
+                  <button onClick={() => deleteVacancy(vacancy.id)}>Удалить</button>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      )}
-    </div>
+
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 20 }}>
+          <button disabled={page <= 1} onClick={() => updateQuery({ page: page - 1 })}>
+            Назад
+          </button>
+          <span>{pageInfo}</span>
+          <button disabled={page >= pages} onClick={() => updateQuery({ page: page + 1 })}>
+            Вперёд
+          </button>
+        </div>
+
+        {selectedVacancy && (
+          <div style={{ marginTop: 30, background: "#2c2c2c", padding: 16, borderRadius: 10 }}>
+            <h3>Файлы вакансии: {selectedVacancy.title}</h3>
+
+            <input
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadFile(file);
+              } } />
+            {fileUploading && <p>Файл загружается...</p>}
+
+            <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+              {files.length === 0 && <div>Файлы не прикреплены</div>}
+              {files.map((file) => (
+                <div
+                  key={file.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    alignItems: "center",
+                    background: "#3a3a3a",
+                    padding: 10,
+                    borderRadius: 8,
+                  }}
+                >
+                  <div>
+                    <div>{file.original_name}</div>
+                    <div style={{ fontSize: 12, color: "#bbb" }}>
+                      {file.mime_type} · {(file.size / 1024).toFixed(1)} KB
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => openFile(file.id)}>Открыть</button>
+                    <button onClick={() => deleteFile(file.id)}>Удалить</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div></>
   );
 }

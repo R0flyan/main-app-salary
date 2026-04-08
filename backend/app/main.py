@@ -5,6 +5,7 @@ from app.api.endpoints import router
 from app.core.config import settings
 from app.models.database import Base, engine
 from app.models import user, vacancy, vacancy_file
+from fastapi.responses import Response
 
 Base.metadata.create_all(bind=engine)
 
@@ -30,3 +31,34 @@ app.include_router(router)
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots_txt():
+    content = """User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /vacancies/files
+Sitemap: http://localhost:8000/sitemap.xml
+"""
+    return Response(content=content, media_type="text/plain")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml():
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://localhost:5173/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>http://localhost:5173/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.2</priority>
+  </url>
+</urlset>
+"""
+    return Response(content=content, media_type="application/xml")
