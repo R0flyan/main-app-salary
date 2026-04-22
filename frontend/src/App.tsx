@@ -107,7 +107,7 @@ function App() {
             const success = await login(email, password);
             if (success) {
                 //fetchHHVacancies();
-                alert("Вы успешно вошли");
+                //alert("Вы успешно вошли");
             } else {
                 alert("Ошибка входа: Проверь логин или пароль");
             }

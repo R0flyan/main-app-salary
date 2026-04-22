@@ -30,57 +30,65 @@ export default function LoginPage({
         <meta name="robots" content="noindex,nofollow" />
         <link rel="canonical" href={`http://localhost:5173/login`} />
       </Helmet>
-
-      <main style={{
-        width: "60vw",
-        minHeight: "75vh",
-        backgroundColor: "#333333ff",
-        borderRadius: "10px",
+    <div style={{
+        minHeight: "100vh",
+        width: "100vw",
         display: "flex",
-        flexDirection: "column",
-        gap: "10px",
         alignItems: "center",
         justifyContent: "center",
-        padding: "30px"
+        background: "linear-gradient(135deg, rgb(57, 57, 57), rgb(134, 134, 133))"
       }}>
-        <header style={{ textAlign: "center", marginBottom: "30px" }}>
-          <h1 style={{ marginBottom: "8px" }}>Joby</h1>
-          <p>Найди работу мечты</p>
-        </header>
+        <main style={{
+            width: "60vw",
+            minHeight: "75vh",
+            background: "linear-gradient(135deg, rgb(173, 173, 172), rgb(82, 82, 81))",
+            borderRadius: "10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "30px"
+        }}>
+            <header style={{ textAlign: "center", marginBottom: "30px" }}>
+            <h1 style={{ marginBottom: "8px" }}>Joby</h1>
+            <p>Найди работу мечты</p>
+            </header>
 
-        <section aria-labelledby="auth-title" style={{ width: "100%", maxWidth: "500px" }}>
-          <h2 id="auth-title">{mode === "login" ? "Вход" : "Регистрация"}</h2>
+            <section aria-labelledby="auth-title" style={{ width: "100%", maxWidth: "500px" }}>
+            <h2 style={{ textAlign: "center" }} id="auth-title">{mode === "login" ? "Вход" : "Регистрация"}</h2>
 
-          <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-            <button onClick={() => setMode("login")}>Вход</button>
-            <button onClick={() => setMode("register")}>Регистрация</button>
-          </div>
+            <div style={{ display: "flex", gap: "10px", marginBottom: "20px", justifyContent: "center" }}>
+                <button onClick={() => setMode("login")}>Вход</button>
+                <button onClick={() => setMode("register")}>Регистрация</button>
+            </div>
 
-          <div style={{ display: "grid", gap: "12px" }}>
-            <label>
-              <span>Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
+            <div style={{ display: "grid", gap: "12px", justifyContent: "center"}}>
+                <label>
+                <span>Email</span>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+                </label>
 
-            <label>
-              <span>Пароль</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
+                <label>
+                <span>Пароль</span>
+                <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                </label>
 
-            <button onClick={handleAuth}>
-              {mode === "login" ? "Войти" : "Создать аккаунт"}
-            </button>
-          </div>
-        </section>
-      </main>
+                <button onClick={handleAuth}>
+                {mode === "login" ? "Войти" : "Создать аккаунт"}
+                </button>
+            </div>
+            </section>
+        </main>
+      </div>
     </>
   );
 }
