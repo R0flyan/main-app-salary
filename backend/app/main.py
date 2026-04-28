@@ -20,7 +20,7 @@ app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,28 +34,28 @@ def health_check():
 
 @app.get("/robots.txt", include_in_schema=False)
 def robots_txt():
-    content = """User-agent: *
+    content = f"""User-agent: *
 Allow: /
 Disallow: /login
 Disallow: /dashboard
 Disallow: /auth
 Disallow: /vacancies/files
-Sitemap: http://localhost:8000/sitemap.xml
+Sitemap: {settings.PUBLIC_BASE_URL}/sitemap.xml
 """
     return Response(content=content, media_type="text/plain")
 
 
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap_xml():
-    content = """<?xml version="1.0" encoding="UTF-8"?>
+    content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://localhost:5173/</loc>
+    <loc>{settings.PUBLIC_BASE_URL}/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>http://localhost:5173/login</loc>
+    <loc>{settings.PUBLIC_BASE_URL}/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>

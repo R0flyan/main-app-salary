@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    CORS_ORIGINS: str = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080",
+    )
+    PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "http://localhost:8080")
     
     # --- Настройки S3 ---
     S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "http://localhost:9000")
@@ -51,7 +56,8 @@ class Settings(BaseSettings):
     S3_PRESIGNED_EXPIRE_SECONDS: int = int(os.getenv("S3_PRESIGNED_EXPIRE_SECONDS", "300"))
     MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", str(5 * 1024 * 1024)))
 
-print("ENV FILE HH_ENABLE_FALLBACK:", os.getenv("HH_ENABLE_FALLBACK"))
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
 settings = Settings()
-print("SETTINGS HH_ENABLE_FALLBACK:", settings.HH_ENABLE_FALLBACK)
-print("DATABASE_URL:", repr(settings.DATABASE_URL))

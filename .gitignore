@@ -2,9 +2,18 @@
 __pycache__/
 *.pyc
 .coverage
+.env
+*.env
+backend/.env
+!*.env.example
+!backend/.env.test.example
 
 test_app.db
 backend/test_app.db
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/

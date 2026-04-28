@@ -149,7 +149,7 @@ describe("VacanciesManager", () => {
       const url = getUrl(input);
       const method = getMethod(input, init);
 
-      if (method === "GET" && url.includes("/vacancies?")) {
+      if (method === "GET" && url.includes("/vacancies/?")) {
         return mockFetchResponse(true, { items: [], total: 0, page: 1, page_size: 5, pages: 1 });
       }
 
@@ -192,7 +192,7 @@ describe("VacanciesManager", () => {
       const url = getUrl(input);
       const method = getMethod(input, init);
 
-      if (method === "GET" && url.includes("/vacancies?")) {
+      if (method === "GET" && url.includes("/vacancies/?")) {
         return mockFetchResponse(true, { items: [sampleVacancy()], total: 1, page: 1, page_size: 5, pages: 1 });
       }
 
@@ -234,7 +234,7 @@ describe("VacanciesManager", () => {
       const url = getUrl(input);
       const method = getMethod(input, init);
 
-      if (method === "GET" && url.includes("/vacancies?")) {
+      if (method === "GET" && url.includes("/vacancies/?")) {
         return mockFetchResponse(true, { items: [sampleVacancy()], total: 1, page: 1, page_size: 5, pages: 1 });
       }
 
@@ -268,7 +268,7 @@ describe("VacanciesManager", () => {
       const url = getUrl(input);
       const method = getMethod(input, init);
 
-      if (method === "GET" && url.includes("/vacancies?")) {
+      if (method === "GET" && url.includes("/vacancies/?")) {
         return mockFetchResponse(true, { items: [sampleVacancy()], total: 1, page: 1, page_size: 5, pages: 1 });
       }
 
@@ -313,7 +313,7 @@ describe("VacanciesManager", () => {
       const url = getUrl(input);
       const method = getMethod(input, init);
 
-      if (method === "GET" && url.includes("/vacancies?")) {
+      if (method === "GET" && url.includes("/vacancies/?")) {
         return mockFetchResponse(true, { items: [sampleVacancy()], total: 1, page: 1, page_size: 5, pages: 1 });
       }
 

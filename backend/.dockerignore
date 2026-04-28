@@ -1,0 +1,10 @@
+.env
+*.env
+!*.env.example
+.pytest_cache
+tests
+__pycache__
+*.pyc
+.coverage
+test_app.db
+*.log

@@ -82,7 +82,7 @@ export default function VacanciesManager() {
       params.set("page", String(page));
       params.set("page_size", String(pageSize));
 
-      const res = await fetch(`${API_URL}/vacancies?${params.toString()}`, {
+      const res = await fetch(`${API_URL}/vacancies/?${params.toString()}`, {
         credentials: "include",
       });
 
