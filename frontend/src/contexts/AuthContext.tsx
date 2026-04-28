@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.tsx
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_URL } from '../config';
 
 export type UserRole = 'user' | 'admin';
 
@@ -33,8 +34,6 @@ interface AuthContextType {
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_URL = "http://localhost:8000";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<UserProfile | null>(null);

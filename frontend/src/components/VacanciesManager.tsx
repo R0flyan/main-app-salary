@@ -11,8 +11,7 @@ import type {
   EmploymentType,
   WorkFormat,
 } from "../types/vacancy";
-
-const API_URL = "http://localhost:8000";
+import { API_URL } from "../config";
 
 const emptyForm = {
   title: "",

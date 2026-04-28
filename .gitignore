@@ -1,1 +1,10 @@
 /venv
+__pycache__/
+*.pyc
+.coverage
+
+test_app.db
+backend/test_app.db
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/

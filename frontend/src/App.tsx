@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import SalaryAnalysis from "./SalaryAnalysis";
 import { useAuth } from './contexts/AuthContext';
 import type { UserProfile } from './contexts/AuthContext';
+import { API_URL } from "./config";
 
 function App() {
     const { 
@@ -33,7 +34,6 @@ function App() {
     const [showAdminPanel, setShowAdminPanel] = useState(false);
     const [usersList, setUsersList] = useState<UserProfile[]>([]);
 
-    const API_URL = "http://localhost:8000";
     const isAdmin = user?.role === 'admin';
 
     // Функция для обновления профиля
